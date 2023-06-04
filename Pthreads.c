@@ -3,14 +3,17 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
-typedef struct {
+typedef struct
+{
 	int **matriz;
 	int rows;
 	int cols;
 } Matriz;
 
-typedef struct  {
+typedef struct
+{
 	int rowStart;
 	int rowEnd;
 	int colStart;
@@ -20,14 +23,14 @@ typedef struct  {
 
 int SEED = 111;
 
-int MATRIZ_ROWS_SIZE = 1000;
-int MATRIZ_COLS_SIZE = 1000;
+#define MATRIZ_ROWS_SIZE 1000
+#define MATRIZ_COLS_SIZE 1000
 
-int BLOCK_ROWS = (MATRIZ_ROWS_SIZE / 100);
-int BLOCK_COLS = (MATRIZ_COLS_SIZE / 100);
-int MACRO_BLOCK_MAX_SIZE = (MATRIZ_ROWS_SIZE * MATRIZ_COLS_SIZE) / (BLOCK_ROWS * BLOCK_COLS);
+#define BLOCK_ROWS MATRIZ_ROWS_SIZE / 100
+#define BLOCK_COLS MATRIZ_COLS_SIZE / 100
+#define MACRO_BLOCK_MAX_SIZE (MATRIZ_ROWS_SIZE * MATRIZ_COLS_SIZE) / (BLOCK_ROWS * BLOCK_COLS)
 
-int NUMBER_THREAD = 4;
+#define NUMBER_THREAD 4
 
 pthread_mutex_t MAIN_MUTEX;
 pthread_mutex_t COUNT_MUTEX;
@@ -36,7 +39,7 @@ pthread_mutex_t COUNT_MUTEX;
 // A matriz é preenchida com números de 1 a 31999
 Matriz *matriz;
 
-MacroBlock* blocks;
+MacroBlock *blocks;
 
 #include "helps.h"
 
@@ -45,14 +48,13 @@ MacroBlock* blocks;
  *
  * @param matriz A matriz para procurar números primos.
  */
-void countNumberPrimesInMatrizWithSerialMethod(Matriz* matriz)
+void countNumberPrimesInMatrizWithSerialMethod(Matriz *matriz)
 {
 	// Conta os números primos na matriz.
 	int primeNumbersInMatriz = countPrimesInMatriz(matriz);
 	// Imprime a quantidade de números primos encontrados na matriz.
 	printf("Números primos encontrados na matriz: %d\n", primeNumbersInMatriz);
 }
-
 
 /**
  * conta a quantidade de números primos dentro de uma determinada matriz usando phread e mutex.
@@ -61,7 +63,7 @@ void countNumberPrimesInMatrizWithSerialMethod(Matriz* matriz)
  */
 void countNumberPrimesInMatrizWithParallelMethod(Matriz *matriz)
 {
-	// Criado os macrosblocos 
+	// Criado os macrosblocos
 	blocks = createMacroBlocksFromMatriz(matriz);
 
 	// Inicializa o mutex para sincronização de thread.
@@ -76,8 +78,7 @@ void countNumberPrimesInMatrizWithParallelMethod(Matriz *matriz)
 	}
 
 	// Aguarde a conclusão de todos os threads antes de continuar.
-	for (int thread = 0; thread < NUMBER_THREAD; thread++)
-	{
+	for (int thread = 0; thread < NUMBER_THREAD; thread++) {
 		pthread_join(threads[thread], NULL);
 	}
 
@@ -90,10 +91,15 @@ void countNumberPrimesInMatrizWithParallelMethod(Matriz *matriz)
 
 int main()
 {
-	matriz = createRadomMatriz(GenMatrizParams{MATRIZ_ROWS_SIZE, MATRIZ_COLS_SIZE, 1, 31999});
+	GenMatrizParams params;
+	params.rows = MATRIZ_ROWS_SIZE;
+	params.cols = MATRIZ_COLS_SIZE;
+	params.min = 1;
+	params.max = 31999;
+
+	matriz = createRadomMatriz(params);
 	// Conta a quantiade de números primos na matriz usando um método serial
 	countNumberPrimesInMatrizWithSerialMethod(matriz);
-
 	// Conta a quantiade de números primos na matriz usando um método pararelo
 	countNumberPrimesInMatrizWithParallelMethod(matriz);
 }

@@ -1,14 +1,21 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <string.h>
 
-struct GenMatrizParams
+typedef struct
 {
   int rows;
   int cols;
   int min;
   int max;
-};
+} GenMatrizParams;
+
+void printMemoryAllocationError(const char *file, int line)
+{
+  printf("Falha na alocação de memória.\n arquivo: %s\n linha: %d\n", file, line);
+  exit(0);
+}
 
 Matriz *createRadomMatriz(GenMatrizParams params)
 {
@@ -46,26 +53,28 @@ int isNumberPrime(int num)
   return 1;
 }
 
-
 MacroBlock *createMacroBlocksFromMatriz(Matriz *matriz)
 {
   MacroBlock *blocks = (MacroBlock *)malloc(sizeof(MacroBlock) * MACRO_BLOCK_MAX_SIZE);
+  if (blocks == NULL) printMemoryAllocationError(__FILE__, __LINE__);
+
   int index = 0;
-  for (int row = 0; row < matriz->rows; row += BLOCK_ROWS) {
-    for (int col = 0; col < matriz->cols; col += BLOCK_COLS, index++) {
-      blocks[index] = {
-        .rowStart = row,
-        .rowEnd = row + BLOCK_ROWS,
-        .colStart = col,
-        .colEnd = col + BLOCK_COLS,
-        .processed = false
-      };
+  for (int row = 0; row < matriz->rows; row += BLOCK_ROWS)
+  {
+    for (int col = 0; col < matriz->cols; col += BLOCK_COLS, index++)
+    {
+      blocks[index].rowStart = row;
+      blocks[index].rowEnd = row + BLOCK_ROWS;
+      blocks[index].colStart = col;
+      blocks[index].colEnd = col + BLOCK_COLS;
+      blocks[index].processed = false;
     }
   }
   return blocks;
 }
 
-int countPrimesNumbersBetweenStartAndEndBlockInMatriz(MacroBlock block, Matriz *matriz) {
+int countPrimesNumbersBetweenStartAndEndBlockInMatriz(MacroBlock block, Matriz *matriz)
+{
   int primeNumbersInBlock = 0;
   for (int i = block.rowStart; i < block.rowEnd; i++)
   {
@@ -106,18 +115,17 @@ void *countPrimesInBlockWithThread(void *param)
     pthread_mutex_unlock(&MAIN_MUTEX);
 
     int primeNumbersInBlock = canCount ? countPrimesNumbersBetweenStartAndEndBlockInMatriz(blocks[blockindex], matriz) : 0;
-    
+
     pthread_mutex_lock(&COUNT_MUTEX);
     PRIMES_NUMBER_COUT_IN_PARALLEL_METHOD += primeNumbersInBlock;
     pthread_mutex_unlock(&COUNT_MUTEX);
 
     canCount = false;
   }
-  
+
   // Retorna NULL para satisfazer o tipo de retorno void
   return NULL;
 }
-
 
 void printMatriz(Matriz *matriz)
 {
@@ -131,8 +139,10 @@ void printMatriz(Matriz *matriz)
   }
 }
 
-void printMacroBlocks(MacroBlock* blocks) {
-  for (int i = 0; i < MACRO_BLOCK_MAX_SIZE; i++) {
+void printMacroBlocks(MacroBlock *blocks)
+{
+  for (int i = 0; i < MACRO_BLOCK_MAX_SIZE; i++)
+  {
     printf("%d ", blocks[i].rowStart);
     printf("%d ", blocks[i].rowEnd);
     printf("%d ", blocks[i].colStart);
