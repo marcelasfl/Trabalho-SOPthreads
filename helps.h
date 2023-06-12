@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 typedef struct
 {
@@ -35,14 +36,14 @@ Matriz *createRadomMatriz(GenMatrizParams params)
   return matriz;
 }
 
-int isNumberPrime(int num)
+int ehPrimo(int num)
 {
   if (num < 2)
   {
     return 0;
   }
 
-  for (int i = 2; i <= num / 2; i++)
+  for (int i = 2; i <= sqrt(num) / 2; i++)
   {
     if (num % i == 0)
     {
@@ -80,7 +81,7 @@ int countPrimesNumbersBetweenStartAndEndBlockInMatriz(MacroBlock block, Matriz *
   {
     for (int j = block.colStart; j < block.colEnd; j++)
     {
-      if (isNumberPrime(matriz->matriz[i][j]))
+      if (ehPrimo(matriz->matriz[i][j]))
       {
         primeNumbersInBlock++;
       }
@@ -89,38 +90,49 @@ int countPrimesNumbersBetweenStartAndEndBlockInMatriz(MacroBlock block, Matriz *
   return primeNumbersInBlock;
 }
 
-int PRIMES_NUMBER_COUT_IN_PARALLEL_METHOD = 0;
+int PRIMES_NUMBER_COUNT_IN_PARALLEL_METHOD = 0;
 /**
  * Esta função conta a qauntidade de números primos em um determinado bloco usando multithreading.
  *
  * @param param - um ponteiro para uma estrutura MacroBlock contendo o bloco para contar números primos em
  * @return NULL
  */
+
+int visitedBlocks[MACRO_BLOCK_MAX_SIZE] = {0};
 void *countPrimesInBlockWithThread(void *param)
 {
   int canCount = false;
-  for (int blockindex = 0; blockindex < MACRO_BLOCK_MAX_SIZE; blockindex++)
+  int blockindex = 0;
+  while (blockindex < MACRO_BLOCK_MAX_SIZE)
   {
     // Bloqueia a main mutex para garantir a segurança do thread
-    pthread_mutex_lock(&MAIN_MUTEX);
-    // Verifica se esse ainda não já foi precessado por outra thread
-    if (!blocks[blockindex].processed)
+    pthread_mutex_lock(&VERIFICATION_MUTEX);
+    // Verifica se esse ainda não já foi processado por outra thread
+    if (visitedBlocks[blockindex] != 1)
     {
       // marca o bloco como processado
-      blocks[blockindex].processed = true;
-      // contar os numeros primos
-      canCount = true;
+      //index pega o ponteiro atual que a thread tá verificando
+        visitedBlocks[blockindex] = 1;
+        canCount = true;
     }
     // Desbloqueia a main mutex
-    pthread_mutex_unlock(&MAIN_MUTEX);
+    pthread_mutex_unlock(&VERIFICATION_MUTEX);
 
-    int primeNumbersInBlock = canCount ? countPrimesNumbersBetweenStartAndEndBlockInMatriz(blocks[blockindex], matriz) : 0;
-
+ 
+    int primeNumbersInBlock;
+    if (canCount) {
+        primeNumbersInBlock = countPrimesNumbersBetweenStartAndEndBlockInMatriz(blocks[blockindex], matriz);
+    }
+    else {
+        primeNumbersInBlock = 0;
+    }
     pthread_mutex_lock(&COUNT_MUTEX);
-    PRIMES_NUMBER_COUT_IN_PARALLEL_METHOD += primeNumbersInBlock;
+    PRIMES_NUMBER_COUNT_IN_PARALLEL_METHOD += primeNumbersInBlock;
     pthread_mutex_unlock(&COUNT_MUTEX);
 
     canCount = false;
+    blockindex++;
+
   }
 
   // Retorna NULL para satisfazer o tipo de retorno void
@@ -158,11 +170,12 @@ int countPrimesInMatriz(Matriz *matriz)
   {
     for (int j = 0; j < matriz->cols; j++)
     {
-      if (isNumberPrime(matriz->matriz[i][j]))
+      if (ehPrimo(matriz->matriz[i][j]))
       {
         primeNumbersInMatriz++;
       }
     }
   }
   return primeNumbersInMatriz;
+ 
 }
