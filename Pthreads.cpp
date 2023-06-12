@@ -24,16 +24,16 @@ typedef struct
 
 int SEED = 111;
 
-#define MATRIZ_ROWS_SIZE 1000
-#define MATRIZ_COLS_SIZE 1000
+#define MATRIZ_ROWS_SIZE 10000
+#define MATRIZ_COLS_SIZE 10000
 
-#define BLOCK_ROWS MATRIZ_ROWS_SIZE / 100
-#define BLOCK_COLS MATRIZ_COLS_SIZE / 100
+#define BLOCK_ROWS 100
+#define BLOCK_COLS 100
 #define MACRO_BLOCK_MAX_SIZE (MATRIZ_ROWS_SIZE * MATRIZ_COLS_SIZE) / (BLOCK_ROWS * BLOCK_COLS)
 
-#define NUMBER_THREAD 4
+#define NUMBER_THREAD 8
 
-pthread_mutex_t MAIN_MUTEX;
+pthread_mutex_t VERIFICATION_MUTEX;
 pthread_mutex_t COUNT_MUTEX;
 
 // Cria um ponteiro para uma matriz gerada aleatoriamente com dimensões MATRIZ_ROWS_SIZE x MATRIZ_COLS_SIZE
@@ -68,7 +68,7 @@ void countNumberPrimesInMatrizWithParallelMethod(Matriz *matriz)
 	blocks = createMacroBlocksFromMatriz(matriz);
 
 	// Inicializa o mutex para sincronização de thread.
-	pthread_mutex_init(&MAIN_MUTEX, NULL);
+	pthread_mutex_init(&VERIFICATION_MUTEX, NULL);
 	pthread_mutex_init(&COUNT_MUTEX, NULL);
 
 	// Criar threads para contar números primos em cada "macrobloco".
@@ -84,10 +84,10 @@ void countNumberPrimesInMatrizWithParallelMethod(Matriz *matriz)
 	}
 
 	// Destruir o mutex depois que a sincronização de thread não for mais necessária.
-	pthread_mutex_destroy(&MAIN_MUTEX);
+	pthread_mutex_destroy(&VERIFICATION_MUTEX);
 	pthread_mutex_destroy(&COUNT_MUTEX);
 
-	printf("Números primos encontrados no metodo paralelo: %d\n", PRIMES_NUMBER_COUT_IN_PARALLEL_METHOD);
+	printf("Números primos encontrados no metodo paralelo: %d\n", PRIMES_NUMBER_COUNT_IN_PARALLEL_METHOD);
 }
 
 int main()
@@ -103,4 +103,3 @@ int main()
 	countNumberPrimesInMatrizWithSerialMethod(matriz);
 	// Conta a quantiade de números primos na matriz usando um método pararelo
 	countNumberPrimesInMatrizWithParallelMethod(matriz);
-}
