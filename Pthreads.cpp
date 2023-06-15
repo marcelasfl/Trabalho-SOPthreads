@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <tgmath.h>
-#include <sys/time.h>
+
+
+typedef unsigned long long LARGE_INTEGER;
 
 typedef struct
 {
@@ -217,19 +219,11 @@ int countPrimesInMatriz()
  * @param timeStart a hora de início para medir o tempo decorrido.
  * @return o tempo decorrido em segundos.
  */
-double getTimeEnd(struct timeval startTime)
+double getTimeEnd(clock_t startTime, int number_thread)
 {
-	struct timeval endTime;
-	double elapsed;
-	
-	// Obter o tempo de término
-	gettimeofday(&endTime, NULL);
-
-	// Calcular o tempo decorrido em segundos
-	elapsed = (endTime.tv_sec - startTime.tv_sec) +
-								 (endTime.tv_usec - startTime.tv_usec) / 1000000.0;
-
-	return elapsed;
+	clock_t endTime = clock();
+	double elapsed = (double)(endTime - startTime) / CLOCKS_PER_SEC;
+	return elapsed / number_thread;
 }
 
 /**
@@ -237,12 +231,11 @@ double getTimeEnd(struct timeval startTime)
  */
 void countNumberPrimesInMatrizWithSerialMethod()
 {
-	struct timeval startTime;
-	gettimeofday(&startTime, NULL);
+	clock_t startTime = clock();
 	// Conta os números primos na matriz.
 	int primeNumbersInMatriz = countPrimesInMatriz();
 	// Imprime o tempo de execução.
-	printf("Tempo de execução no modo serial: %.4f segundos\n", getTimeEnd(startTime));
+	printf("Tempo de execução no modo serial: %.4f segundos\n", getTimeEnd(startTime, 1));
 	// Imprime a quantidade de números primos encontrados na matriz.
 	printf("Números primos encontrados na matriz: %d\n", primeNumbersInMatriz);
 }
@@ -266,8 +259,8 @@ void countNumberPrimesInMatrizWithParallelMethod()
 		pthread_create(&threads[thread], NULL, countPrimesInBlockWithThread, NULL);
 	}
 
-	struct timeval startTime;
-	gettimeofday(&startTime, NULL);
+	clock_t startTime = clock(); 
+
 
 	// Aguarde a conclusão de todos os threads antes de continuar.
 	for (int thread = 0; thread < NUMBER_THREAD; thread++)
@@ -275,7 +268,7 @@ void countNumberPrimesInMatrizWithParallelMethod()
 		pthread_join(threads[thread], NULL);
 	}
 
-	printf("Tempo de execução no modo paralelo: %.4f segundos\n", getTimeEnd(startTime));
+	printf("Tempo de execução no modo paralelo: %.4f segundos\n", getTimeEnd(startTime, NUMBER_THREAD));
 
 	// Destruir o mutex depois que a sincronização de thread não for mais necessária.
 	pthread_mutex_destroy(&VERIFICATION_MUTEX);
