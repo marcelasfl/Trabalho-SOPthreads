@@ -1,12 +1,11 @@
 #define HAVE_STRUCT_TIMESPEC
-#define _POSIX_C_SOURCE 199309L // leia para mais informações: https://stackoverflow.com/questions/40515557/compilation-error-on-clock-gettime-and-clock-monotonic
 #pragma comment(lib, "pthreadVC2.lib")
-#include <time.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <tgmath.h>
+#include <sys/time.h>
 
 typedef struct
 {
@@ -218,14 +217,17 @@ int countPrimesInMatriz()
  * @param timeStart a hora de início para medir o tempo decorrido.
  * @return o tempo decorrido em segundos.
  */
-double getTimeEnd(struct timespec timeStart)
+double getTimeEnd(struct timeval startTime)
 {
-	struct timespec finish;
+	struct timeval endTime;
 	double elapsed;
-	clock_gettime(CLOCK_MONOTONIC, &finish);
+	
+	// Obter o tempo de término
+	gettimeofday(&endTime, NULL);
 
-	elapsed = (finish.tv_sec - timeStart.tv_sec);
-	elapsed += (finish.tv_nsec - timeStart.tv_nsec) / 1000000000.0;
+	// Calcular o tempo decorrido em segundos
+	elapsed = (endTime.tv_sec - startTime.tv_sec) +
+								 (endTime.tv_usec - startTime.tv_usec) / 1000000.0;
 
 	return elapsed;
 }
@@ -235,13 +237,12 @@ double getTimeEnd(struct timespec timeStart)
  */
 void countNumberPrimesInMatrizWithSerialMethod()
 {
-	struct timespec startTime;
-	// Chama a função clock_gettime para obter o tempo de início da execução. Neste caso, estamos usando o relógio CLOCK_MONOTONIC, que fornece um tempo monotonicamente crescente, independente de ajustes de tempo do sistema.
-	clock_gettime(CLOCK_MONOTONIC, &startTime);
+	struct timeval startTime;
+	gettimeofday(&startTime, NULL);
 	// Conta os números primos na matriz.
 	int primeNumbersInMatriz = countPrimesInMatriz();
 	// Imprime o tempo de execução.
-	printf("Tempo de execução no modo serial: %.6f segundos\n", getTimeEnd(startTime));
+	printf("Tempo de execução no modo serial: %.4f segundos\n", getTimeEnd(startTime));
 	// Imprime a quantidade de números primos encontrados na matriz.
 	printf("Números primos encontrados na matriz: %d\n", primeNumbersInMatriz);
 }
@@ -265,8 +266,8 @@ void countNumberPrimesInMatrizWithParallelMethod()
 		pthread_create(&threads[thread], NULL, countPrimesInBlockWithThread, NULL);
 	}
 
-	struct timespec startTime;
-	clock_gettime(CLOCK_MONOTONIC, &startTime);
+	struct timeval startTime;
+	gettimeofday(&startTime, NULL);
 
 	// Aguarde a conclusão de todos os threads antes de continuar.
 	for (int thread = 0; thread < NUMBER_THREAD; thread++)
