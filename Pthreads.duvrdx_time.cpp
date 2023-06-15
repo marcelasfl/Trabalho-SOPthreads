@@ -251,6 +251,7 @@ void countNumberPrimesInMatrizWithSerialMethod()
  */
 void countNumberPrimesInMatrizWithParallelMethod()
 {
+	
 	// Criado os macrosblocos
 	blocks = createMacroBlocksFromMatriz();
 
@@ -265,16 +266,18 @@ void countNumberPrimesInMatrizWithParallelMethod()
 		pthread_create(&threads[thread], NULL, countPrimesInBlockWithThread, NULL);
 	}
 
-	struct timespec startTime;
-	clock_gettime(CLOCK_MONOTONIC, &startTime);
-
+	clock_t begin_p = 0;
+  clock_t end_p = 0;
+	double timeSpent_p = 0;
+	begin_p = clock();
 	// Aguarde a conclusão de todos os threads antes de continuar.
 	for (int thread = 0; thread < NUMBER_THREAD; thread++)
 	{
 		pthread_join(threads[thread], NULL);
 	}
-
-	printf("Tempo de execução no modo paralelo: %.4f segundos\n", getTimeEnd(startTime));
+	end_p = clock();
+	timeSpent_p += (double)(end_p - begin_p) / CLOCKS_PER_SEC;
+  printf("The elapsed time is %f seconds\n", timeSpent_p/NUMBER_THREAD);
 
 	// Destruir o mutex depois que a sincronização de thread não for mais necessária.
 	pthread_mutex_destroy(&VERIFICATION_MUTEX);
