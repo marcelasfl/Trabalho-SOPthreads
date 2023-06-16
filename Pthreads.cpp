@@ -7,8 +7,6 @@
 #include <tgmath.h>
 
 
-typedef unsigned long long LARGE_INTEGER;
-
 typedef struct
 {
 	int **matriz;
@@ -35,8 +33,8 @@ typedef struct
 
 int SEED = 111;
 
-#define MATRIZ_ROWS_SIZE 15000
-#define MATRIZ_COLS_SIZE 15000
+#define MATRIZ_ROWS_SIZE 10000
+#define MATRIZ_COLS_SIZE 10000
 
 #define BLOCK_ROWS 100
 #define BLOCK_COLS 100
@@ -49,7 +47,7 @@ pthread_mutex_t COUNT_MUTEX;
 
 // Cria um ponteiro para uma matriz gerada aleatoriamente com dimensões MATRIZ_ROWS_SIZE x MATRIZ_COLS_SIZE
 // A matriz é preenchida com números de 1 a 31999
-Matriz *matriz;
+int** matriz;
 
 MacroBlock *blocks;
 
@@ -59,19 +57,17 @@ void printMemoryAllocationError(const char *file, int line)
 	exit(0);
 }
 
-Matriz *createRadomMatriz(GenMatrizParams params)
+int** createRadomMatriz(GenMatrizParams params)
 {
 	srand(SEED);
-	Matriz *matriz = (Matriz *)malloc(sizeof(Matriz));
-	matriz->rows = params.rows;
-	matriz->cols = params.cols;
-	matriz->matriz = (int **)malloc(matriz->rows * sizeof(int *));
-	for (int i = 0; i < matriz->rows; i++)
+	int** matriz = (int**)malloc(sizeof(Matriz));
+	
+	for (int i = 0; i < MATRIZ_ROWS_SIZE; i++)
 	{
-		matriz->matriz[i] = (int *)malloc(matriz->cols * sizeof(int));
-		for (int j = 0; j < matriz->cols; j++)
+		matriz[i] = (int *)malloc(MATRIZ_COLS_SIZE* sizeof(int));
+		for (int j = 0; j < MATRIZ_COLS_SIZE; j++)
 		{
-			matriz->matriz[i][j] = rand() % (params.max - params.min + 1) + params.min;
+			matriz[i][j] = rand() % (params.max - params.min + 1) + params.min;
 		}
 	}
 	return matriz;
@@ -105,9 +101,9 @@ MacroBlock *createMacroBlocksFromMatriz()
 		printMemoryAllocationError(__FILE__, __LINE__);
 
 	int index = 0;
-	for (int row = 0; row < matriz->rows; row += BLOCK_ROWS)
+	for (int row = 0; row < MATRIZ_ROWS_SIZE; row += BLOCK_ROWS)
 	{
-		for (int col = 0; col < matriz->cols; col += BLOCK_COLS, index++)
+		for (int col = 0; col < MATRIZ_COLS_SIZE; col += BLOCK_COLS, index++)
 		{
 			blocks[index].rowStart = row;
 			blocks[index].rowEnd = row + BLOCK_ROWS;
@@ -126,7 +122,7 @@ int countPrimesNumbersBetweenStartAndEndBlockInMatriz(MacroBlock block)
 	{
 		for (int j = block.colStart; j < block.colEnd; j++)
 		{
-			if (ehPrimo(matriz->matriz[i][j]))
+			if (ehPrimo(matriz[i][j]))
 			{
 				primeNumbersInBlock++;
 			}
@@ -173,13 +169,13 @@ void *countPrimesInBlockWithThread(void *param)
 	return NULL;
 }
 
-void printMatriz(Matriz *matriz)
+void printMatriz(int** matriz)
 {
-	for (int i = 0; i < matriz->rows; i++)
+	for (int i = 0; i < MATRIZ_ROWS_SIZE; i++)
 	{
-		for (int j = 0; j < matriz->cols; j++)
+		for (int j = 0; j < MATRIZ_COLS_SIZE; j++)
 		{
-			printf("%d ", matriz->matriz[i][j]);
+			printf("%d ", matriz[i][j]);
 		}
 		printf("\n");
 	}
@@ -200,11 +196,11 @@ void printMacroBlocks(MacroBlock *blocks)
 int countPrimesInMatriz()
 {
 	int primeNumbersInMatriz = 0;
-	for (int i = 0; i < matriz->rows; i++)
+	for (int i = 0; i < MATRIZ_ROWS_SIZE; i++)
 	{
-		for (int j = 0; j < matriz->cols; j++)
+		for (int j = 0; j < MATRIZ_COLS_SIZE; j++)
 		{
-			if (ehPrimo(matriz->matriz[i][j]))
+			if (ehPrimo(matriz[i][j]))
 			{
 				primeNumbersInMatriz++;
 			}
@@ -260,8 +256,6 @@ void countNumberPrimesInMatrizWithParallelMethod()
 	}
 
 	clock_t startTime = clock(); 
-
-
 	// Aguarde a conclusão de todos os threads antes de continuar.
 	for (int thread = 0; thread < NUMBER_THREAD; thread++)
 	{
